@@ -36,33 +36,29 @@ function download_and_unzip() {
     tar -xf ../$REPO_NAME.tar.gz
 }
 
-function zip_and_upload() {
-    # zip the current directory
-    tar -czf ../$REPO_NAME.tar.gz --exclude='.git *.tar.gz' .
-    # upload to remote server
-    scp ../$REPO_NAME.tar.gz $REMOTE_USER@$REMOTE_HOST:~/
-}
+if [ "$1" == "init" ]; then
+    # git pull the repo on remote server
+    ssh $REMOTE_USER@$REMOTE_HOST "git clone $REPO_URL $REPO_NAME"
 
-function unzip_on_remote() {
-    # unzip the file on remote server
-    ssh $REMOTE_USER@$REMOTE_HOST "mkdir -p ~/$REPO_NAME"
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -xf ../$REPO_NAME.tar.gz"
-}
-
-function sync_remote() {
-    zip_and_upload
-    unzip_on_remote
-} 
-
-if [ "$1" == "upload" ]; then
+elif [ "$1" == "upload" ]; then
     # upload the current directory to the remote server
 
-    sync_remote
+    # ignore .git directory
+    tar -czf ../$REPO_NAME.tar.gz --exclude='.git' .
+    # scp to remote server
+    scp ../$REPO_NAME.tar.gz $REMOTE_USER@$REMOTE_HOST:~/
+    ssh $REMOTE_USER@$REMOTE_HOST "mkdir -p ~/$REPO_NAME"
+    ssh $REMOTE_USER@$REMOTE_HOST "tar -xf ~/$REPO_NAME.tar.gz -C ~/$REPO_NAME"
+
     download_and_unzip
 
 # download from remote
 elif [ "$1" == "download" ]; then
-    download_and_unzip
+    # download the current directory from the remote server
+    # ignore .git directory
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -czf ../$REPO_NAME.tar.gz --exclude='.git *.tar.gz' ."
+    scp $REMOTE_USER@$REMOTE_HOST:~/$REPO_NAME.tar.gz ../
+    tar -xf ../$REPO_NAME.tar.gz
 
 elif [ "$1" == "commit" ]; then
     COMMIT_MESSAGE=$2
@@ -75,18 +71,6 @@ elif [ "$1" == "commit" ]; then
 
     # ssh to remote server and commit the changes
     ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git commit -m '$COMMIT_MESSAGE'"
-
-elif [ "$1" == "add" ]; then
-    sync_remote
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git $@"
-
-elif [ "$1" == "status" ]; then
-    sync_remote
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git $@"
-
-elif [ "$1" == "diff" ]; then
-    sync_remote
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git $@"
 
 # pull
 elif [ "$1" == "pull" ]; then
