@@ -41,9 +41,9 @@ if [ "$1" == "upload" ]; then
 elif [ "$1" == "download" ]; then
     # download the current directory from the remote server
     # ignore .git directory
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -czf ../$REPO_NAME.tar.gz --exclude='.git' ."
-    scp $REMOTE_USER@$REMOTE_HOST:~/$REPO_NAME.tar.gz ./
-    tar -xf $REPO_NAME.tar.gz
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -czf ../$REPO_NAME.tar.gz --exclude='.git *.tar.gz' ."
+    scp $REMOTE_USER@$REMOTE_HOST:~/$REPO_NAME.tar.gz ../
+    tar -xf ../$REPO_NAME.tar.gz
 
 elif [ "$1" == "commit" ]; then
     COMMIT_MESSAGE=$2
