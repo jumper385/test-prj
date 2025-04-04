@@ -27,6 +27,15 @@ if [ -z "$REPO_NAME" ]; then
     exit 1
 fi
 
+# download function abstraction
+function download_and_unzip() {
+    # download the current directory from the remote server
+    # ignore .git directory
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -czf ../$REPO_NAME.tar.gz --exclude='.git *.tar.gz' ."
+    scp $REMOTE_USER@$REMOTE_HOST:~/$REPO_NAME.tar.gz ../
+    tar -xf ../$REPO_NAME.tar.gz
+}
+
 if [ "$1" == "upload" ]; then
     # upload the current directory to the remote server
 
@@ -36,6 +45,8 @@ if [ "$1" == "upload" ]; then
     scp ../$REPO_NAME.tar.gz $REMOTE_USER@$REMOTE_HOST:~/
     ssh $REMOTE_USER@$REMOTE_HOST "mkdir -p ~/$REPO_NAME"
     ssh $REMOTE_USER@$REMOTE_HOST "tar -xf ~/$REPO_NAME.tar.gz -C ~/$REPO_NAME"
+
+    download_and_unzip
 
 # download from remote
 elif [ "$1" == "download" ]; then
@@ -56,6 +67,13 @@ elif [ "$1" == "commit" ]; then
 
     # ssh to remote server and commit the changes
     ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git commit -m '$COMMIT_MESSAGE'"
+
+# pull
+elif [ "$1" == "pull" ]; then
+    # pull the changes from the remote server
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git pull"
+    # then copy the changes to the local machine
+    download_and_unzip
 
 else
 
