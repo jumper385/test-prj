@@ -36,25 +36,29 @@ function download_and_unzip() {
     tar -xf ../$REPO_NAME.tar.gz
 }
 
+function zip_and_upload() {
+    # zip the current directory
+    tar -czf ../$REPO_NAME.tar.gz --exclude='.git *.tar.gz' .
+    # upload to remote server
+    scp ../$REPO_NAME.tar.gz $REMOTE_USER@$REMOTE_HOST:~/
+}
+
+function unzip_on_remote() {
+    # unzip the file on remote server
+    ssh $REMOTE_USER@$REMOTE_HOST "mkdir -p ~/$REPO_NAME"
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -xf ../$REPO_NAME.tar.gz"
+}
+
 if [ "$1" == "upload" ]; then
     # upload the current directory to the remote server
 
-    # ignore .git directory
-    tar -czf ../$REPO_NAME.tar.gz --exclude='.git' .
-    # scp to remote server
-    scp ../$REPO_NAME.tar.gz $REMOTE_USER@$REMOTE_HOST:~/
-    ssh $REMOTE_USER@$REMOTE_HOST "mkdir -p ~/$REPO_NAME"
-    ssh $REMOTE_USER@$REMOTE_HOST "tar -xf ~/$REPO_NAME.tar.gz -C ~/$REPO_NAME"
-
+    zip_and_upload
+    unzip_on_remote
     download_and_unzip
 
 # download from remote
 elif [ "$1" == "download" ]; then
-    # download the current directory from the remote server
-    # ignore .git directory
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -czf ../$REPO_NAME.tar.gz --exclude='.git *.tar.gz' ."
-    scp $REMOTE_USER@$REMOTE_HOST:~/$REPO_NAME.tar.gz ../
-    tar -xf ../$REPO_NAME.tar.gz
+    download_and_unzip
 
 elif [ "$1" == "commit" ]; then
     COMMIT_MESSAGE=$2
