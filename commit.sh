@@ -1,23 +1,5 @@
 #!/bin/bash
 
-# zips up current directory
-# scp to remote server
-# unzips on remote server with repo
-# pushes commit from repo to remote server
-
-# options
-# - commit
-# - push
-# - pull
-
-# usage
-# ./commit.sh commit "commit message"
-# ./commit.sh push
-# ./commit.sh pull <branch_name>
-
-# configured with .env
-# load .env file
-
 ENV_FILEPATH=".env"
 
 if [ ! -f $ENV_FILEPATH ]; then
@@ -45,49 +27,30 @@ if [ -z "$REPO_NAME" ]; then
     exit 1
 fi
 
-# check if required variables are set
-# zip up the current directory in a tar.gz
-
-# git add 
-if [ -z "$1" ]; then
-    echo "No argument provided"
-    exit 1
-fi
-
 if [ "$1" == "upload" ]; then
     # upload the current directory to the remote server
 
-    tar -czf ../$REPO_NAME.tar.gz . 
+    # ignore .git directory
+    tar -czf ../$REPO_NAME.tar.gz --exclude='.git' .
     # scp to remote server
     scp ../$REPO_NAME.tar.gz $REMOTE_USER@$REMOTE_HOST:~/
     ssh $REMOTE_USER@$REMOTE_HOST "mkdir -p ~/$REPO_NAME"
     ssh $REMOTE_USER@$REMOTE_HOST "tar -xf ~/$REPO_NAME.tar.gz -C ~/$REPO_NAME"
-fi
 
-# check if the first argument is add
-if [ "$1" == "add" ]; then
-    # check if the second argument is set
-    if [ -z "$2" ]; then
-        echo "No file or directory provided"
+elif [ "$1" == "commit" ]; then
+    COMMIT_MESSAGE=$2
+    # commit the changes to the remote server
+    if [ -z "$COMMIT_MESSAGE" ]; then
+        echo "Commit message is required"
+        echo "e.g ./commit.sh commit 'your commit message'"
         exit 1
     fi
-    # add the file or directory
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git add $2"
-fi
 
-# check if the first argument is commit
-if [ "$1" == "commit" ]; then
-    # check if the second argument is set
-    if [ -z "$2" ]; then
-        echo "No commit message provided"
-        exit 1
-    fi
-    # commit the changes
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git commit -m '$2'"
-fi
+    # ssh to remote server and commit the changes
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git commit -m '$COMMIT_MESSAGE'"
 
-# check if the first argument is push
-if [ "$1" == "push" ]; then
-    # push the changes
-    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git push"
+else
+
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git $@"
+
 fi
