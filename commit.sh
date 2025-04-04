@@ -49,11 +49,15 @@ function unzip_on_remote() {
     ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && tar -xf ../$REPO_NAME.tar.gz"
 }
 
+function sync_remote() {
+    zip_and_upload
+    unzip_on_remote
+} 
+
 if [ "$1" == "upload" ]; then
     # upload the current directory to the remote server
 
-    zip_and_upload
-    unzip_on_remote
+    sync_remote
     download_and_unzip
 
 # download from remote
@@ -71,6 +75,18 @@ elif [ "$1" == "commit" ]; then
 
     # ssh to remote server and commit the changes
     ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git commit -m '$COMMIT_MESSAGE'"
+
+elif [ "$1" == "add" ]; then
+    sync_remote
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git $@"
+
+elif [ "$1" == "status" ]; then
+    sync_remote
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git $@"
+
+elif [ "$1" == "diff" ]; then
+    sync_remote
+    ssh $REMOTE_USER@$REMOTE_HOST "cd ~/$REPO_NAME && git $@"
 
 # pull
 elif [ "$1" == "pull" ]; then
